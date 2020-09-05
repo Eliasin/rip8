@@ -30,18 +30,16 @@ impl RAMOutOfBoundsError {
     }
 }
 
-pub struct CPU<'a> {
+pub struct CPU {
     register_file: RegisterFile,
     ram: RAM,
-    keyboard: Box<&'a dyn Keyboard>,
 }
 
-impl CPU<'_> {
-    pub fn new<'a>(keyboard: &'a impl Keyboard) -> CPU<'a> {
+impl CPU {
+    pub fn new() -> CPU {
         let mut cpu = CPU {
             register_file: RegisterFile::new(),
             ram: [0; RAM_SIZE],
-            keyboard: Box::new(keyboard),
         };
 
         cpu.register_file.PC = RAM_PROG_START as u16;
@@ -70,7 +68,7 @@ impl CPU<'_> {
         Ok((self.ram[msb_address], self.ram[lsb_address]))
     }
 
-    pub fn execute_cycle(&mut self) -> Result<(), Box<dyn Error>> {
+    pub fn execute_cycle(&mut self, keyboard: impl Keyboard) -> Result<(), Box<dyn Error>> {
         let (msb, lsb) = self.get_next_instruction_bytes()?;
 
         let instruction = decoder::decode_instruction(msb, lsb)?;
@@ -79,7 +77,7 @@ impl CPU<'_> {
             instruction,
             &mut self.register_file,
             &mut self.ram,
-            self.keyboard.as_ref(),
+            &keyboard,
         )?;
 
         match instruction {

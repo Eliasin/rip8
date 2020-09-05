@@ -211,7 +211,16 @@ pub fn execute_instruction(
         }
         Instruction::SKP(reg) => {
             let val = register_file.get_v_register(reg);
-        }
+            if keyboard.is_key_pressed(val) {
+                register_file.PC += 2;
+            }
+        },
+        Instruction::SKNP(reg) => {
+            let val = register_file.get_v_register(reg);
+            if !keyboard.is_key_pressed(val) {
+                register_file.PC += 2;
+            }
+        },
         _ => (),
     };
     Ok(())

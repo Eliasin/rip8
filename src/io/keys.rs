@@ -31,7 +31,7 @@ impl Keyboard for SDL2Keyboard<'_> {
 }
 
 impl SDL2Keyboard<'_> {
-    pub fn new(e: &sdl2::EventPump) -> SDL2Keyboard {
+    pub fn new<'a>(keyboard_state: KeyboardState<'a>) -> SDL2Keyboard<'a> {
         let key_map: HashMap<Key, Scancode> = [
             (0x1, Scancode::Num1),
             (0x2, Scancode::Num2),
@@ -54,7 +54,7 @@ impl SDL2Keyboard<'_> {
         .cloned()
         .collect();
         SDL2Keyboard {
-            keyboard_state: KeyboardState::new(e),
+            keyboard_state: keyboard_state,
             key_map: key_map,
         }
     }
