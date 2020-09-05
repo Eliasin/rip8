@@ -1,7 +1,9 @@
 use super::executor;
+use crate::io::keys::Keyboard;
 use crate::logic::decoder;
+use crate::logic::instruction::Instruction;
 use crate::mem::register::RegisterFile;
-use crate::mem::{ RAM, RAM_SIZE };
+use crate::mem::{RAM, RAM_SIZE};
 
 use std::error::Error;
 
@@ -22,22 +24,24 @@ impl Error for RAMOutOfBoundsError {}
 
 impl RAMOutOfBoundsError {
     pub fn new() -> RAMOutOfBoundsError {
-        RAMOutOfBoundsError{
-            msg: "Attempted access to out of bounds region of RAM"
+        RAMOutOfBoundsError {
+            msg: "Attempted access to out of bounds region of RAM",
         }
     }
 }
 
-pub struct CPU {
+pub struct CPU<'a> {
     register_file: RegisterFile,
     ram: RAM,
+    keyboard: Box<&'a dyn Keyboard>,
 }
 
-impl CPU {
-    pub fn new() -> CPU {
-        let mut cpu = CPU{
+impl CPU<'_> {
+    pub fn new<'a>(keyboard: &'a impl Keyboard) -> CPU<'a> {
+        let mut cpu = CPU {
             register_file: RegisterFile::new(),
-            ram: [0; RAM_SIZE]
+            ram: [0; RAM_SIZE],
+            keyboard: Box::new(keyboard),
         };
 
         cpu.register_file.PC = RAM_PROG_START as u16;
@@ -63,9 +67,6 @@ impl CPU {
         if lsb_address > RAM_SIZE {
             return Err(RAMOutOfBoundsError::new());
         }
-
-        self.register_file.PC += 1;
-
         Ok((self.ram[msb_address], self.ram[lsb_address]))
     }
 
@@ -74,7 +75,19 @@ impl CPU {
 
         let instruction = decoder::decode_instruction(msb, lsb)?;
 
-        executor::execute_instruction(instruction, &mut self.register_file, &mut self.ram);
+        executor::execute_instruction(
+            instruction,
+            &mut self.register_file,
+            &mut self.ram,
+            self.keyboard.as_ref(),
+        )?;
+
+        match instruction {
+            Instruction::JP(_) | Instruction::JPV0(_) => {}
+            _ => {
+                self.register_file.PC += 2;
+            }
+        };
 
         Ok(())
     }

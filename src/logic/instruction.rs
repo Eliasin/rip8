@@ -1,6 +1,6 @@
 #![allow(non_camel_case_types)]
 
-use crate::mem::register::{ VRegister };
+use crate::mem::register::VRegister;
 
 pub type Addr = u16;
 pub type Nibble = u8;

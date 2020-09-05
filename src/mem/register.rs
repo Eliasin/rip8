@@ -53,12 +53,12 @@ pub struct RegisterFile {
     vF: u8,
     pub I: u16,
     pub PC: u16,
+    pub SP: u8,
     pub DT: u8,
     pub ST: u8,
 }
 
 impl RegisterFile {
-
     pub fn get_v_register(&self, name: VRegister) -> u8 {
         match name {
             VRegister::V0 => self.v0,
@@ -101,7 +101,7 @@ impl RegisterFile {
     }
 
     pub fn new() -> RegisterFile {
-        RegisterFile{
+        RegisterFile {
             v0: 0,
             v1: 0,
             v2: 0,
@@ -122,6 +122,7 @@ impl RegisterFile {
             DT: 0,
             ST: 0,
             PC: 0,
+            SP: 0,
         }
     }
 }
