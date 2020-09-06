@@ -34,7 +34,9 @@ impl Runtime {
         let cpu_time_step: Duration = Duration::new(0, (1000000000.0 / CPU_HZ) as u32);
 
         let last_frame_time = Instant::now();
+
         'running: loop {
+
             let next_frame_time = last_frame_time + cpu_time_step;
             if !(Instant::now() >= next_frame_time) {
                 continue;
@@ -49,8 +51,23 @@ impl Runtime {
                 };
             }
 
-            let keyboard = SDL2Keyboard::new(event_pump.keyboard_state());
-            self.cpu.execute_cycle(keyboard)?;
+            let keyboard_state = SDL2Keyboard::new(event_pump.keyboard_state());
+            let instruction = self.cpu.inspect_next_instruction();
+            match self.cpu.execute_cycle(keyboard_state) {
+                Ok(_) => {
+                    match instruction {
+                        Ok(v) => println!("{}", v),
+                        Err(error) => println!("{}", error),
+                    }
+                    println!("{}", self.cpu.inspect_register_file());
+                },
+                Err(error) => {
+                    println!("{} \n {}", error, self.cpu.inspect_memory());
+                    return Ok(());
+                },
+            }
+
+            canvas.present();
         };
 
         Ok(())
