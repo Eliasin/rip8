@@ -94,10 +94,9 @@ impl CPU {
         format!("{:?}", self.register_file)
     }
 
-    pub fn inspect_next_instruction(&self) -> Result<String, Box<dyn std::error::Error>> {
+    pub fn inspect_next_instruction(&self) -> Result<Instruction, Box<dyn std::error::Error>> {
         let (msb, lsb) = self.get_next_instruction_bytes()?;
-        let instruction = decoder::decode_instruction(msb, lsb)?;
-        Ok(format!("{:?}", instruction))
+        Ok(decoder::decode_instruction(msb, lsb)?)
     }
 
     pub fn inspect_memory(&self) -> String {

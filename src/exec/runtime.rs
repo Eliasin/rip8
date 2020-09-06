@@ -56,7 +56,7 @@ impl Runtime {
             match self.cpu.execute_cycle(keyboard_state) {
                 Ok(_) => {
                     match instruction {
-                        Ok(v) => println!("{}", v),
+                        Ok(v) => println!("{:?}", v),
                         Err(error) => println!("{}", error),
                     }
                     println!("{}", self.cpu.inspect_register_file());
