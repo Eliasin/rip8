@@ -47,6 +47,7 @@ fn push_pc(ram: &mut RAM, sp: &mut u8, pc: u16) -> Result<(), InvalidStackPointe
     ram[*sp as usize] = pc_msb;
     ram[(*sp + 1) as usize] = pc_lsb;
     *sp += 2;
+
     Ok(())
 }
 
@@ -54,11 +55,12 @@ fn pop_pc(ram: &mut RAM, sp: &mut u8) -> Result<u16, InvalidStackPointerError> {
     if *sp < 2 {
         return Err(InvalidStackPointerError::negative());
     }
-    let pc_lsb = ram[*sp as usize];
-    let pc_msb = ram[(*sp - 1) as usize];
+    let pc_lsb = ram[(*sp - 1) as usize];
+    let pc_msb = ram[(*sp - 2) as usize];
     *sp -= 2;
 
     let pc = ((pc_msb as u16) << 8) + pc_lsb as u16;
+
     Ok(pc)
 }
 
