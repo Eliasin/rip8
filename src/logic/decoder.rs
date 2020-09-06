@@ -70,14 +70,14 @@ pub fn decode_instruction(msb: u8, lsb: u8) -> Result<Instruction, MalformedInst
             }
         },
         0x1 => Instruction::JP(create_addr_from_nybbles(
-            first_nybble,
             second_nybble,
             third_nybble,
+            fourth_nybble,
         )),
         0x2 => Instruction::CALL(create_addr_from_nybbles(
-            first_nybble,
             second_nybble,
             third_nybble,
+            fourth_nybble,
         )),
         0x3 => Instruction::SE(nybble_to_vregister(second_nybble), ByteOrVReg::Byte(lsb)),
         0x4 => Instruction::SNE(nybble_to_vregister(second_nybble), ByteOrVReg::Byte(lsb)),
@@ -127,14 +127,14 @@ pub fn decode_instruction(msb: u8, lsb: u8) -> Result<Instruction, MalformedInst
             ByteOrVReg::Register(nybble_to_vregister(third_nybble)),
         ),
         0xA => Instruction::LDI(create_addr_from_nybbles(
-            first_nybble,
             second_nybble,
             third_nybble,
+            fourth_nybble,
         )),
         0xB => Instruction::JPV0(create_addr_from_nybbles(
-            first_nybble,
             second_nybble,
             third_nybble,
+            fourth_nybble
         )),
         0xC => Instruction::RND(nybble_to_vregister(second_nybble), lsb),
         0xD => Instruction::DRW(
