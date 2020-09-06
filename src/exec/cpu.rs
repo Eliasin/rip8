@@ -59,7 +59,7 @@ impl CPU {
         Ok(())
     }
 
-    fn get_next_instruction_bytes(&mut self) -> Result<(u8, u8), RAMOutOfBoundsError> {
+    fn get_next_instruction_bytes(&self) -> Result<(u8, u8), RAMOutOfBoundsError> {
         let msb_address = self.register_file.PC as usize;
         let lsb_address = (self.register_file.PC + 1) as usize;
         if lsb_address > RAM_SIZE {
@@ -88,5 +88,19 @@ impl CPU {
         };
 
         Ok(())
+    }
+
+    pub fn inspect_register_file(&self) -> String {
+        format!("{:?}", self.register_file)
+    }
+
+    pub fn inspect_next_instruction(&self) -> Result<String, Box<dyn std::error::Error>> {
+        let (msb, lsb) = self.get_next_instruction_bytes()?;
+        let instruction = decoder::decode_instruction(msb, lsb)?;
+        Ok(format!("{:?}", instruction))
+    }
+
+    pub fn inspect_memory(&self) -> String {
+        format!("{:?}", self.ram)
     }
 }
