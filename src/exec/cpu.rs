@@ -104,4 +104,14 @@ impl CPU {
     pub fn inspect_memory(&self) -> String {
         format!("{:?}", self.ram)
     }
+
+    pub fn tick_timers(&mut self) {
+        if self.register_file.DT > 0 {
+            self.register_file.DT -= 1;
+        }
+
+        if self.register_file.ST > 0 {
+            self.register_file.ST -= 1;
+        }
+    }
 }

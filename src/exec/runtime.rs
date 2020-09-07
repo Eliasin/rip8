@@ -13,6 +13,7 @@ pub struct Runtime {
 }
 
 pub const CPU_HZ: f64 = 500.0;
+pub const TIMER_HZ: f64 = 60.0;
 
 fn draw_to_canvas(canvas: &mut sdl2::render::WindowCanvas, screen: &Screen) -> Result<(), Box<dyn std::error::Error>> {
     for (row, row_arr) in screen.inspect_screen().iter().enumerate() {
@@ -48,16 +49,25 @@ impl Runtime {
         canvas.set_draw_color(sdl2::pixels::Color::WHITE);
         canvas.clear();
         canvas.set_scale(20.0, 20.0)?;
+        canvas.present();
 
         self.cpu.map_program(program)?;
 
         let cpu_time_step: Duration = Duration::new(0, (1000000000.0 / CPU_HZ) as u32);
 
         let mut last_frame_time = Instant::now();
+        let mut last_timer_tick = Instant::now();
 
         let mut screen = Screen::new();
 
         'running: loop {
+            let timer_ticks = ((Instant::now() - last_timer_tick).as_secs_f64() * TIMER_HZ) as u32;
+            if timer_ticks > 0 {
+                last_timer_tick = Instant::now();
+                for _ in 0..timer_ticks {
+                    self.cpu.tick_timers();
+                }
+            }
 
             let next_frame_time = last_frame_time + cpu_time_step;
             if !(Instant::now() >= next_frame_time) {
