@@ -8,7 +8,9 @@ use crate::mem::{RAM, RAM_SIZE};
 
 use std::error::Error;
 
-const RAM_PROG_START: usize = 0x200;
+pub const RAM_PROG_START: usize = 0x200;
+pub const RAM_DIGIT_SPRITE_START: usize = 0xFF;
+pub const DIGIT_SPRITE_SIZE: usize = 5;
 
 #[derive(Debug)]
 pub struct RAMOutOfBoundsError {
@@ -48,16 +50,44 @@ impl CPU {
         cpu
     }
 
-    pub fn map_program(&mut self, program: Vec<u8>) -> Result<(), RAMOutOfBoundsError> {
-        let program_length = program.len();
-        if program_length > self.ram.len() - RAM_PROG_START {
+    fn map_data(&mut self, data: Vec<u8>, start: usize) -> Result<(), RAMOutOfBoundsError> {
+        let data_length = data.len();
+        if data_length > self.ram.len() - start {
             return Err(RAMOutOfBoundsError::new());
         }
 
-        let program_area = &mut self.ram[RAM_PROG_START..RAM_PROG_START + program.len()];
-        program_area.copy_from_slice(program.as_slice());
+        let program_area = &mut self.ram[start..start + data_length];
+        program_area.copy_from_slice(data.as_slice());
 
         Ok(())
+    }
+
+    pub fn map_program(&mut self, program: Vec<u8>) -> Result<(), RAMOutOfBoundsError> {
+        self.map_data(program, RAM_PROG_START)
+    }
+
+    pub fn map_digit_sprites(&mut self) {
+        let zero = vec![0xF0, 0x90, 0x90, 0x90, 0xF0];
+        let one = vec![0x20, 0x60, 0x20, 0x20, 0x70];
+        let two = vec![0xF0, 0x10, 0xF0, 0x80, 0xF0];
+        let three = vec![0xF0, 0x10, 0xF0, 0x10, 0xF0];
+        let four = vec![0x90, 0x90, 0xF0, 0x10, 0x10];
+        let five = vec![0xF0, 0x80, 0xF0, 0x10, 0xF0];
+        let six = vec![0xF0, 0x80, 0xF0, 0x90, 0xF0];
+        let seven = vec![0xF0, 0x10, 0x20, 0x40, 0x40];
+        let eight = vec![0xF0, 0x90, 0xF0, 0x90, 0xF0];
+        let nine = vec![0xF0, 0x90, 0xF0, 0x10, 0xF0];
+        let a = vec![0xF0, 0x90, 0xF0, 0x90, 0x90];
+        let b = vec![0xE0, 0x90, 0xE0, 0x90, 0xE0];
+        let c = vec![0xF0, 0x80, 0x80, 0x80, 0xF0];
+        let d = vec![0xE0, 0x90, 0x90, 0x90, 0xE0];
+        let e = vec![0xF0, 0x80, 0xF0, 0x80, 0xF0];
+        let f = vec![0xF0, 0x80, 0xF0, 0x80, 0x80];
+
+        let digits = vec![zero, one, two, three, four, five, six, seven, eight, nine ,a, b, c, d, e, f];
+        for (i, digit) in digits.into_iter().enumerate() {
+            self.map_data(digit, RAM_DIGIT_SPRITE_START + (i * DIGIT_SPRITE_SIZE)).unwrap();
+        }
     }
 
     fn get_next_instruction_bytes(&self) -> Result<(u8, u8), RAMOutOfBoundsError> {

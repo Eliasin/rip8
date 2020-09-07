@@ -52,6 +52,7 @@ impl Runtime {
         canvas.present();
 
         self.cpu.map_program(program)?;
+        self.cpu.map_digit_sprites();
 
         let cpu_time_step: Duration = Duration::new(0, (1000000000.0 / CPU_HZ) as u32);
 

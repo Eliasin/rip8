@@ -2,7 +2,7 @@ use crate::io::keys::{ Key, Keyboard };
 use crate::io::screen::Screen;
 use crate::logic::instruction::{ByteOrVReg, Instruction};
 use crate::mem::register::{RegisterFile, VRegister};
-use super::cpu::RAMOutOfBoundsError;
+use super::cpu::{ RAMOutOfBoundsError, RAM_DIGIT_SPRITE_START, DIGIT_SPRITE_SIZE };
 use crate::mem::RAM;
 
 use std::error::Error;
@@ -142,8 +142,10 @@ pub fn execute_instruction(
                 register_file.set_v_register(reg, ram[src_addr]);
             }
         },
-        Instruction::LDF(_) => {
-            //TODO Implement digit sprites
+        Instruction::LDF(reg) => {
+            let val = register_file.get_v_register(reg);
+
+            register_file.I = (RAM_DIGIT_SPRITE_START + (DIGIT_SPRITE_SIZE * (val as usize))) as u16;
         },
         Instruction::JP(addr) => register_file.PC = addr,
         Instruction::SE(reg, byte_or_reg) => {
