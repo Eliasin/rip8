@@ -12,7 +12,6 @@ pub struct Runtime {
     sdl_context: sdl2::Sdl,
 }
 
-pub const CPU_HZ: f64 = 500.0;
 pub const TIMER_HZ: f64 = 60.0;
 
 fn draw_to_canvas(canvas: &mut sdl2::render::WindowCanvas, screen: &Screen) -> Result<(), Box<dyn std::error::Error>> {
@@ -38,7 +37,7 @@ impl Runtime {
         }
     }
 
-    pub fn start(&mut self, program: Vec<u8>) -> Result<(), Box<dyn std::error::Error + 'static>> {
+    pub fn start(&mut self, program: Vec<u8>, cpu_clock_speed: f64) -> Result<(), Box<dyn std::error::Error + 'static>> {
         let mut event_pump = self.sdl_context.event_pump()?;
 
         let video_subsystem = self.sdl_context.video()?;
@@ -54,7 +53,7 @@ impl Runtime {
         self.cpu.map_program(program)?;
         self.cpu.map_digit_sprites();
 
-        let cpu_time_step: Duration = Duration::new(0, (1000000000.0 / CPU_HZ) as u32);
+        let cpu_time_step: Duration = Duration::new(0, (1000000000.0 / cpu_clock_speed) as u32);
 
         let mut last_frame_time = Instant::now();
         let mut last_timer_tick = Instant::now();
