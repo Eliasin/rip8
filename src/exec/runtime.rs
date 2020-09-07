@@ -70,7 +70,7 @@ impl Runtime {
             }
 
             let next_frame_time = last_frame_time + cpu_time_step;
-            if !(Instant::now() >= next_frame_time) {
+            if Instant::now() < next_frame_time {
                 continue;
             }
 
