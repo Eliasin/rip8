@@ -53,7 +53,7 @@ impl Runtime {
 
         let cpu_time_step: Duration = Duration::new(0, (1000000000.0 / CPU_HZ) as u32);
 
-        let last_frame_time = Instant::now();
+        let mut last_frame_time = Instant::now();
 
         let mut screen = Screen::new();
 
@@ -91,6 +91,8 @@ impl Runtime {
 
             draw_to_canvas(&mut canvas, &screen)?;
             canvas.present();
+
+            last_frame_time = Instant::now();
         };
 
         Ok(())
