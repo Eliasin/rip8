@@ -134,14 +134,12 @@ pub fn execute_instruction(
                 let val = register_file.get_v_register(reg);
                 let dest_addr = (register_file.I as usize) + i;
                 ram[dest_addr] = val;
-                println!("writing {} to addr {} from reg {:?}", val, dest_addr, reg);
             }
         },
         Instruction::RDARR(end_reg) => {
             for (i, reg) in get_v_register_range(end_reg).into_iter().enumerate() {
                 let src_addr = (register_file.I as usize) + i;
                 register_file.set_v_register(reg, ram[src_addr]);
-                println!("reading {} to {:?} from addr {}", ram[src_addr], reg, src_addr);
             }
         },
         Instruction::LDF(_) => {

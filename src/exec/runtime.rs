@@ -74,15 +74,8 @@ impl Runtime {
             }
 
             let keyboard_state = SDL2Keyboard::new(event_pump.keyboard_state());
-            let instruction = self.cpu.inspect_next_instruction();
             match self.cpu.execute_cycle(keyboard_state, &mut screen) {
-                Ok(_) => {
-                    match instruction {
-                        Ok(v) => println!("{:?}", v),
-                        Err(error) => println!("{}", error),
-                    }
-                    println!("{}", self.cpu.inspect_register_file());
-                },
+                Ok(_) => {},
                 Err(error) => {
                     println!("{} \n {}", error, self.cpu.inspect_memory());
                     return Ok(());
