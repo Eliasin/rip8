@@ -1,5 +1,6 @@
 use super::executor;
 use crate::io::keys::Keyboard;
+use crate::io::screen::Screen;
 use crate::logic::decoder;
 use crate::logic::instruction::Instruction;
 use crate::mem::register::RegisterFile;
@@ -68,7 +69,7 @@ impl CPU {
         Ok((self.ram[msb_address], self.ram[lsb_address]))
     }
 
-    pub fn execute_cycle(&mut self, keyboard: impl Keyboard) -> Result<(), Box<dyn Error>> {
+    pub fn execute_cycle(&mut self, keyboard: impl Keyboard, screen: &mut Screen) -> Result<(), Box<dyn Error>> {
         let (msb, lsb) = self.get_next_instruction_bytes()?;
 
         let instruction = decoder::decode_instruction(msb, lsb)?;
@@ -78,6 +79,7 @@ impl CPU {
             &mut self.register_file,
             &mut self.ram,
             &keyboard,
+            screen,
         )?;
 
         match instruction {

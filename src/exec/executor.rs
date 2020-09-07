@@ -1,6 +1,8 @@
-use crate::io::keys::Keyboard;
+use crate::io::keys::{ Key, Keyboard };
+use crate::io::screen::Screen;
 use crate::logic::instruction::{ByteOrVReg, Instruction};
 use crate::mem::register::{RegisterFile, VRegister};
+use super::cpu::RAMOutOfBoundsError;
 use crate::mem::RAM;
 
 use std::error::Error;
@@ -74,18 +76,77 @@ fn get_val_from_byte_or_v_register(
     }
 }
 
+fn get_pressed_key(keyboard: &dyn Keyboard) -> Option<Key> {
+    for key in 0x0..0xF {
+        if keyboard.is_key_pressed(key) {
+            return Some(key);
+        }
+    }
+
+    None
+}
+
+fn get_v_register_range(end: VRegister) -> Vec<VRegister> {
+    match end {
+        VRegister::V0 => vec![VRegister::V0],
+        VRegister::V1 => vec![VRegister::V0, VRegister::V1],
+        VRegister::V2 => vec![VRegister::V0, VRegister::V1, VRegister::V2],
+        VRegister::V3 => vec![VRegister::V0, VRegister::V1, VRegister::V2, VRegister::V3],
+        VRegister::V4 => vec![VRegister::V0, VRegister::V1, VRegister::V2, VRegister::V3, VRegister::V4],
+        VRegister::V5 => vec![VRegister::V0, VRegister::V1, VRegister::V2, VRegister::V3, VRegister::V4, VRegister::V5],
+        VRegister::V6 => vec![VRegister::V0, VRegister::V1, VRegister::V2, VRegister::V3, VRegister::V4, VRegister::V5, VRegister::V6],
+        VRegister::V7 => vec![VRegister::V0, VRegister::V1, VRegister::V2, VRegister::V3, VRegister::V4, VRegister::V5, VRegister::V6, VRegister::V7],
+        VRegister::V8 => vec![VRegister::V0, VRegister::V1, VRegister::V2, VRegister::V3, VRegister::V4, VRegister::V5, VRegister::V6, VRegister::V7, VRegister::V8],
+        VRegister::V9 => vec![VRegister::V0, VRegister::V1, VRegister::V2, VRegister::V3, VRegister::V4, VRegister::V5, VRegister::V6, VRegister::V7, VRegister::V8, VRegister::V9],
+        VRegister::VA => vec![VRegister::V0, VRegister::V1, VRegister::V2, VRegister::V3, VRegister::V4, VRegister::V5, VRegister::V6, VRegister::V7, VRegister::V8, VRegister::V9, VRegister::VA],
+        VRegister::VB => vec![VRegister::V0, VRegister::V1, VRegister::V2, VRegister::V3, VRegister::V4, VRegister::V5, VRegister::V6, VRegister::V7, VRegister::V8, VRegister::V9, VRegister::VA, VRegister::VB],
+        VRegister::VC => vec![VRegister::V0, VRegister::V1, VRegister::V2, VRegister::V3, VRegister::V4, VRegister::V5, VRegister::V6, VRegister::V7, VRegister::V8, VRegister::V9, VRegister::VA, VRegister::VB, VRegister::VC],
+        VRegister::VD => vec![VRegister::V0, VRegister::V1, VRegister::V2, VRegister::V3, VRegister::V4, VRegister::V5, VRegister::V6, VRegister::V7, VRegister::V8, VRegister::V9, VRegister::VA, VRegister::VB, VRegister::VC, VRegister::VD],
+        VRegister::VE => vec![VRegister::V0, VRegister::V1, VRegister::V2, VRegister::V3, VRegister::V4, VRegister::V5, VRegister::V6, VRegister::V7, VRegister::V8, VRegister::V9, VRegister::VA, VRegister::VB, VRegister::VC, VRegister::VD, VRegister::VE],
+        VRegister::VF => vec![VRegister::V0, VRegister::V1, VRegister::V2, VRegister::V3, VRegister::V4, VRegister::V5, VRegister::V6, VRegister::V7, VRegister::V8, VRegister::V9, VRegister::VA, VRegister::VB, VRegister::VC, VRegister::VD, VRegister::VE, VRegister::VF],
+    }
+}
+
 pub fn execute_instruction(
     instruction: Instruction,
     register_file: &mut RegisterFile,
     ram: &mut RAM,
     keyboard: &dyn Keyboard,
+    screen: &mut Screen
 ) -> Result<(), Box<dyn Error>> {
     match instruction {
+        Instruction::CLS => {
+            screen.clear();
+        },
         Instruction::LD(reg, byte_or_reg) => {
             let val = get_val_from_byte_or_v_register(byte_or_reg, register_file);
             register_file.set_v_register(reg, val);
-        }
-        Instruction::LDI(addr) => register_file.I = addr,
+        },
+        Instruction::LDI(addr) => register_file.I = addr & 0x0FFF,
+        Instruction::LDK(reg) => {
+            match get_pressed_key(&keyboard) {
+                Some(key) => register_file.set_v_register(reg, key),
+                None => register_file.PC -= 2,
+            }
+        },
+        Instruction::LDARR(end_reg) => {
+            for (i, reg) in get_v_register_range(end_reg).into_iter().enumerate() {
+                let val = register_file.get_v_register(reg);
+                let dest_addr = (register_file.I as usize) + i;
+                ram[dest_addr] = val;
+                println!("writing {} to addr {} from reg {:?}", val, dest_addr, reg);
+            }
+        },
+        Instruction::RDARR(end_reg) => {
+            for (i, reg) in get_v_register_range(end_reg).into_iter().enumerate() {
+                let src_addr = (register_file.I as usize) + i;
+                register_file.set_v_register(reg, ram[src_addr]);
+                println!("reading {} to {:?} from addr {}", ram[src_addr], reg, src_addr);
+            }
+        },
+        Instruction::LDF(_) => {
+            //TODO Implement digit sprites
+        },
         Instruction::JP(addr) => register_file.PC = addr,
         Instruction::SE(reg, byte_or_reg) => {
             let reg_val = register_file.get_v_register(reg);
@@ -223,7 +284,33 @@ pub fn execute_instruction(
                 register_file.PC += 2;
             }
         },
-        _ => (),
+        Instruction::LDBCD(reg) => {
+            let val = register_file.get_v_register(reg);
+            let hundreds = val / 100;
+            let tens = (val - hundreds * 100) / 10;
+            let ones = val - hundreds * 100 - tens * 10;
+
+            let i_val = register_file.I;
+            if (i_val + 2) as usize > ram.len() {
+                return Err(Box::new(RAMOutOfBoundsError::new()));
+            }
+
+            ram[i_val as usize] = hundreds;
+            ram[(i_val + 1) as usize] = tens;
+            ram[(i_val + 2) as usize] = ones;
+        },
+        Instruction::DRW(reg_a, reg_b, n) => {
+            let mut sprite = vec![];
+            for i in 0..n {
+                let addr = register_file.I + (i as u16);
+                sprite.push(ram[addr as usize])
+            }
+            let x = register_file.get_v_register(reg_a);
+            let y = register_file.get_v_register(reg_b);
+            let vf_val = screen.draw(x, y, sprite)?;
+
+            register_file.set_v_register(VRegister::VF, vf_val as u8);
+        },
     };
     Ok(())
 }
