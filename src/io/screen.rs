@@ -27,17 +27,20 @@ impl std::error::Error for InvalidSpriteSizeError {}
 
 pub struct Screen {
     screen: [[bool; SCREEN_WIDTH]; SCREEN_HEIGHT],
+    has_changed: bool,
 }
 
 impl Screen {
     pub fn new() -> Screen {
         Screen{
             screen: [[false; SCREEN_WIDTH]; SCREEN_HEIGHT],
+            has_changed: false,
         }
     }
 
     pub fn clear(&mut self) {
         self.screen = [[false; SCREEN_WIDTH]; SCREEN_HEIGHT];
+        self.has_changed = true;
     }
 
     fn draw_sprite_line(&mut self, x: u8, y: u8, sprite_line: u8) -> bool {
@@ -51,6 +54,8 @@ impl Screen {
 
             is_pixel_overwritten = is_pixel_overwritten || (sprite_pixel && self.screen[wrapped_y][wrapped_x]);
         }
+
+        self.has_changed = true;
 
         is_pixel_overwritten
     }
@@ -71,5 +76,13 @@ impl Screen {
 
     pub fn inspect_screen<'a>(&'a self) -> &'a [[bool; SCREEN_WIDTH]; SCREEN_HEIGHT] {
         &self.screen
+    }
+
+    pub fn has_changed(&self) -> bool {
+        self.has_changed
+    }
+
+    pub fn reset_changed(&mut self) {
+        self.has_changed = false;
     }
 }

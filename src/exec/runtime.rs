@@ -89,8 +89,11 @@ impl Runtime {
                 },
             }
 
-            draw_to_canvas(&mut canvas, &screen)?;
-            canvas.present();
+            if screen.has_changed() {
+                draw_to_canvas(&mut canvas, &screen)?;
+                screen.reset_changed();
+                canvas.present();
+            }
 
             last_frame_time = Instant::now();
         };
