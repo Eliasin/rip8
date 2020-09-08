@@ -6,6 +6,7 @@ use sdl2;
 use sdl2::event::Event;
 use rocket;
 use rocket::State;
+use rocket_contrib::serve::StaticFiles;
 
 use std::time::{ Instant, Duration };
 use std::sync::{Arc, Mutex};
@@ -126,6 +127,7 @@ impl Runtime {
 
         rocket::ignite().manage(rocket_cpu_lock)
                         .mount("/", routes![registers, memory])
+                        .mount("/", StaticFiles::from(concat!(env!("CARGO_MANIFEST_DIR"), "/static")))
                         .launch();
         Ok(())
     }
