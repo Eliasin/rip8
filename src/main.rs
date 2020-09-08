@@ -1,3 +1,6 @@
+#![feature(proc_macro_hygiene, decl_macro)]
+#[macro_use] extern crate rocket;
+
 mod mem;
 mod logic;
 mod exec;
@@ -26,6 +29,10 @@ fn main() -> Result<(), Box<dyn std::error::Error + 'static>> {
               .help("CPU clock speed (defaults to 500 Hz)")
               .value_name("HZ")
               .takes_value(true)
+        ).arg(Arg::with_name("debug")
+              .short("d")
+              .long("debug")
+              .help("Enabled debugger window")
         ).get_matches();
 
     let rom_path = matches.value_of("rom").unwrap();
@@ -34,13 +41,17 @@ fn main() -> Result<(), Box<dyn std::error::Error + 'static>> {
         Err(error) => panic!("Error while parsing clock speed: {}", error),
     };
 
-    let sdl_context = sdl2::init()?;
+    let debug = matches.is_present("debug");
 
     let file_bytes = read(rom_path)?;
 
-    let mut runtime = Runtime::new(sdl_context);
+    let mut runtime = Runtime::new();
 
-    runtime.start(file_bytes, clock_speed)?;
+    if debug {
+        runtime.start_debug(file_bytes, clock_speed)?;
+    } else {
+        runtime.start(file_bytes, clock_speed)?;
+    }
 
     Ok(())
 
