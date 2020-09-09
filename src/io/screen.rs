@@ -28,6 +28,9 @@ impl std::error::Error for InvalidSpriteSizeError {}
 pub struct Screen {
     screen: [[bool; SCREEN_WIDTH]; SCREEN_HEIGHT],
     has_changed: bool,
+    last_drawn_sprite: Option<Vec<u8>>,
+    last_draw_result: Option<Vec<u8>>,
+    last_draw_area: Option<Vec<u8>>,
 }
 
 impl Screen {
@@ -35,7 +38,22 @@ impl Screen {
         Screen{
             screen: [[false; SCREEN_WIDTH]; SCREEN_HEIGHT],
             has_changed: false,
+            last_drawn_sprite: None,
+            last_draw_result: None,
+            last_draw_area: None,
         }
+    }
+
+    pub fn inspect_last_drawn_sprite(&self) -> Option<Vec<u8>> {
+        self.last_drawn_sprite.clone()
+    }
+
+    pub fn inspect_last_draw_area(&self) -> Option<Vec<u8>> {
+        self.last_draw_area.clone()
+    }
+
+    pub fn inspect_last_draw_result(&self) -> Option<Vec<u8>> {
+        self.last_draw_result.clone()
     }
 
     pub fn clear(&mut self) {
@@ -46,14 +64,23 @@ impl Screen {
     fn draw_sprite_line(&mut self, x: u8, y: u8, sprite_line: u8) -> bool {
         let mut is_pixel_overwritten = false;
         let wrapped_y = (y as usize) % SCREEN_HEIGHT;
+
+        let mut draw_line = 0;
+        let mut draw_area = 0;
+
         for i in 0..7 {
             let wrapped_x = ((x as usize) + (i as usize)) % SCREEN_WIDTH;
             let sprite_pixel = (sprite_line & (0x80 >> i)) != 0;
             let final_value = self.screen[wrapped_y][wrapped_x] ^ sprite_pixel;
+            draw_area = (draw_area << 1) | self.screen[wrapped_y][wrapped_x] as u8;
             self.screen[wrapped_y][wrapped_x] = final_value;
+            draw_line = (draw_line << 1) | final_value as u8;
 
             is_pixel_overwritten = is_pixel_overwritten || (sprite_pixel && self.screen[wrapped_y][wrapped_x]);
         }
+
+        self.last_draw_result.as_mut().unwrap().push(draw_line);
+        self.last_draw_area.as_mut().unwrap().push(draw_area);
 
         self.has_changed = true;
 
@@ -65,6 +92,10 @@ impl Screen {
         if sprite.len() > MAX_SPRITE_SIZE {
             return Err(Box::new(InvalidSpriteSizeError::new(sprite.len())));
         }
+
+        self.last_drawn_sprite = Some(sprite.clone());
+        self.last_draw_area = Some(vec![]);
+        self.last_draw_result = Some(vec![]);
 
         for (i, sprite_line) in sprite.iter().enumerate() {
             let does_line_overwrite_pixel = self.draw_sprite_line(x, y + (i as u8), *sprite_line);

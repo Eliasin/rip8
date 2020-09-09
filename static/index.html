@@ -16,6 +16,7 @@
     <button id="resume">Resume</button>
     <button id="pause">Pause</button>
     <button id="step">Step Next</button>
+    <button id="step_next_draw">Step Next Draw</button>
     <div>
       <input type="text" id="pc_break"></input>
       <button id="add_pc_breakpoint">Add PC Breakpoint</button>
@@ -44,6 +45,21 @@
       <code id="memory_range"></code>
     </div>
     <code id="memory"></code>
+  </div>
+
+  <div id="graphics_display" class="display">
+    <p class="sprite_display">
+    <label>Last Drawn Sprite</label>
+      <code id="last_drawn_sprite"></code>
+      </p>
+    <p class="sprite_display">
+    <label>Last Draw Area</label>
+      <code id="last_draw_area"></code>
+      </p>
+    <p class="sprite_display">
+    <label>Last Draw Result</label>
+      <code id="last_draw_result"></code>
+      </p>
   </div>
 
   <script src="index.js"></script>

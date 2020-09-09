@@ -16,6 +16,22 @@
     display: box;
 }
 
+.sprite_display {
+    border: solid;
+    border-width: 2;
+    width: 80px;
+}
+
+#graphics_display {
+    display: flex;
+    overflow-wrap: anywhere;
+    flex-direction: row;
+    border-width: 4;
+    border: solid;
+    margin: 10px;
+    justify-content: center;
+}
+
 #memory {
     display: flex;
     overflow-wrap: anywhere;
