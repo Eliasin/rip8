@@ -43,6 +43,7 @@ fn delete_pc_breakpoint(pc: u16, breakpoints_lock: State<Arc<Mutex<HashSet<u16>>
     }
 }
 
+#[derive(PartialEq)]
 enum IsPaused {
     Paused,
     Running,
@@ -197,7 +198,7 @@ impl Runtime {
 
                 let breakpoints = breakpoints_lock.lock().unwrap();
 
-                if breakpoints.contains(&pc) {
+                if breakpoints.contains(&pc) && *paused == IsPaused::Running {
                     *paused = IsPaused::Paused;
                     continue;
                 }
