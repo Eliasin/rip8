@@ -1,0 +1,28 @@
+.display {
+    border: solid;
+    border-width: 4;
+    margin: 10px;
+    padding: 5px;
+    text-align: center;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.block {
+    display: box;
+}
+
+#memory {
+    border-width: 4;
+    border: solid;
+    margin: 10px;
+}
+
+#root {
+    display: flex;
+    flex-direction: column;
+}

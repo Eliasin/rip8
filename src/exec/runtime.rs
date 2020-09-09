@@ -1,4 +1,5 @@
 use super::cpu::CPU;
+use crate::mem::register::RegisterFile;
 use crate::io::keys::SDL2Keyboard;
 use crate::io::screen::Screen;
 
@@ -7,21 +8,57 @@ use sdl2::event::Event;
 use rocket;
 use rocket::State;
 use rocket_contrib::serve::StaticFiles;
+use rocket_contrib::json::Json;
 
 use std::time::{ Instant, Duration };
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::collections::HashSet;
 
 #[get("/registers")]
-fn registers(cpu_lock: State<Arc<Mutex<CPU>>>) -> String {
+fn registers(cpu_lock: State<Arc<Mutex<CPU>>>) -> Json<RegisterFile> {
     let cpu = cpu_lock.lock().unwrap();
-    format!("{:?}", cpu.inspect_register_file())
+    Json(cpu.inspect_register_file())
 }
 
 #[get("/memory")]
-fn memory(cpu_lock: State<Arc<Mutex<CPU>>>) -> String {
+fn memory(cpu_lock: State<Arc<Mutex<CPU>>>) -> Json<Vec<u8>> {
     let cpu = cpu_lock.lock().unwrap();
-    format!("{:?}", cpu.inspect_memory())
+    Json(cpu.inspect_memory().to_vec())
+}
+
+#[post("/add-pc-breakpoint/<pc>")]
+fn add_pc_breakpoint(pc: u16, breakpoints_lock: State<Arc<Mutex<HashSet<u16>>>>) {
+    let mut breakpoints = breakpoints_lock.lock().unwrap();
+    if !breakpoints.contains(&pc) {
+        breakpoints.insert(pc);
+    }
+}
+
+#[post("/delete-pc-breakpoint/<pc>")]
+fn delete_pc_breakpoint(pc: u16, breakpoints_lock: State<Arc<Mutex<HashSet<u16>>>>) {
+    let mut breakpoints = breakpoints_lock.lock().unwrap();
+    if breakpoints.contains(&pc) {
+        breakpoints.remove(&pc);
+    }
+}
+
+#[post("/pause")]
+fn pause_emulation(paused_lock: State<Arc<Mutex<bool>>>) {
+    let mut paused = paused_lock.lock().unwrap();
+    *paused = true;
+}
+
+#[post("/resume")]
+fn resume_emulation(paused_lock: State<Arc<Mutex<bool>>>) {
+    let mut paused = paused_lock.lock().unwrap();
+    *paused = false;
+}
+
+#[post("/is-paused")]
+fn is_paused(paused_lock: State<Arc<Mutex<bool>>>) -> Json<bool> {
+    let paused = paused_lock.lock().unwrap();
+    Json(*paused)
 }
 
 pub struct Runtime {}
@@ -51,6 +88,12 @@ impl Runtime {
     pub fn start_debug(&mut self, program: Vec<u8>, cpu_clock_speed: f64) -> Result<(), Box<dyn::std::error::Error>> {
         let cpu_lock = Arc::new(Mutex::new(CPU::new()));
         let rocket_cpu_lock = Arc::clone(&cpu_lock);
+
+        let breakpoints_lock = Arc::new(Mutex::new(HashSet::<u16>::new()));
+        let rocket_breakpoints_lock = Arc::clone(&breakpoints_lock);
+
+        let paused_lock = Arc::new(Mutex::new(false));
+        let rocket_paused_lock = Arc::clone(&paused_lock);
 
         thread::spawn(move || -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             let sdl_context = sdl2::init()?;
@@ -103,12 +146,27 @@ impl Runtime {
                     };
                 }
 
+                let mut paused = paused_lock.lock().unwrap();
+
+                if *paused {
+                    continue;
+                }
+
                 let mut cpu = cpu_lock.lock().unwrap();
+                let pc = cpu.inspect_register_file().PC;
+
+                let breakpoints = breakpoints_lock.lock().unwrap();
+
+                if breakpoints.contains(&pc) {
+                    *paused = true;
+                    continue;
+                }
+
                 let keyboard_state = SDL2Keyboard::new(event_pump.keyboard_state());
                 match cpu.execute_cycle(keyboard_state, &mut screen) {
                     Ok(_) => {},
                     Err(error) => {
-                        println!("{} \n {}", error, cpu.inspect_memory());
+                        println!("{}", error);
                         return Ok(());
                     },
                 }
@@ -126,7 +184,9 @@ impl Runtime {
         });
 
         rocket::ignite().manage(rocket_cpu_lock)
-                        .mount("/", routes![registers, memory])
+                        .manage(rocket_paused_lock)
+                        .manage(rocket_breakpoints_lock)
+                        .mount("/", routes![add_pc_breakpoint, delete_pc_breakpoint, registers, memory, pause_emulation, resume_emulation, is_paused])
                         .mount("/", StaticFiles::from(concat!(env!("CARGO_MANIFEST_DIR"), "/static")))
                         .launch();
         Ok(())
@@ -184,7 +244,7 @@ impl Runtime {
             match cpu.execute_cycle(keyboard_state, &mut screen) {
                 Ok(_) => {},
                 Err(error) => {
-                    println!("{} \n {}", error, cpu.inspect_memory());
+                    println!("{}", error);
                     return Ok(());
                 },
             }

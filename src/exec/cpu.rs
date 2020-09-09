@@ -122,8 +122,8 @@ impl CPU {
         Ok(())
     }
 
-    pub fn inspect_register_file(&self) -> String {
-        format!("{:?}", self.register_file)
+    pub fn inspect_register_file(&self) -> RegisterFile {
+        self.register_file
     }
 
     pub fn inspect_next_instruction(&self) -> Result<Instruction, Box<dyn std::error::Error>> {
@@ -131,8 +131,8 @@ impl CPU {
         Ok(decoder::decode_instruction(msb, lsb)?)
     }
 
-    pub fn inspect_memory(&self) -> String {
-        format!("{:?}", self.ram)
+    pub fn inspect_memory(&self) -> &RAM {
+        &self.ram
     }
 
     pub fn tick_timers(&mut self) {

@@ -1,5 +1,7 @@
 #![allow(non_snake_case)]
 
+use serde::Serialize;
+
 #[derive(Debug, Copy, Clone)]
 pub enum Register {
     V(VRegister),
@@ -33,7 +35,7 @@ pub enum OtherRegister {
     I,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize)]
 pub struct RegisterFile {
     v0: u8,
     v1: u8,

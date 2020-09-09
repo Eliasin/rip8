@@ -11,11 +11,38 @@
 
 </head>
 
-<body>
-  <p id="register_file">
-  </p>
-  <p id="memory">
-  </p>
+<body id="root">
+  <div class="controls">
+    <button id="resume">Resume</button>
+    <button id="pause">Pause</button>
+    <button id="step">Step Next</button>
+    <div>
+      <input type="text" id="pc_break"></input>
+      <button id="add_pc_breakpoint">Add PC Breakpoint</button>
+    </div>
+  </div>
+
+  <div id="breakpoint_display" class="display">
+    <label>Breakpoints</label>
+    <ul id="pc_breakpoint_list">
+    </ul>
+  </div>
+
+  <div id="register_display" class="display">
+    <code id="register_file"></code>
+  </div>
+
+  <div id="memory_display" class="display">
+    <div class="box">
+      <label for="peek_address">Peek Address</label>
+      <input type="text" id="peek_address" name="peek_address"></input>
+    </div>
+    <div class="box">
+      <code id="memory_range"></code>
+    </div>
+    <code id="memory"></code>
+  </div>
+
   <script src="index.js"></script>
 </body>
 </html>
