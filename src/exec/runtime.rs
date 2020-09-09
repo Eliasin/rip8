@@ -43,22 +43,49 @@ fn delete_pc_breakpoint(pc: u16, breakpoints_lock: State<Arc<Mutex<HashSet<u16>>
     }
 }
 
+enum IsPaused {
+    Paused,
+    Running,
+}
 #[post("/pause")]
-fn pause_emulation(paused_lock: State<Arc<Mutex<bool>>>) {
+fn pause_emulation(paused_lock: State<Arc<Mutex<IsPaused>>>) {
     let mut paused = paused_lock.lock().unwrap();
-    *paused = true;
+    *paused = IsPaused::Paused;
 }
 
 #[post("/resume")]
-fn resume_emulation(paused_lock: State<Arc<Mutex<bool>>>) {
+fn resume_emulation(paused_lock: State<Arc<Mutex<IsPaused>>>, step_next_lock: State<Arc<Mutex<CanStepNext>>>) {
     let mut paused = paused_lock.lock().unwrap();
-    *paused = false;
+    *paused = IsPaused::Running;
+
+    let mut can_step_next = step_next_lock.lock().unwrap();
+    *can_step_next = CanStepNext::StayPaused;
 }
 
 #[post("/is-paused")]
-fn is_paused(paused_lock: State<Arc<Mutex<bool>>>) -> Json<bool> {
+fn is_paused(paused_lock: State<Arc<Mutex<IsPaused>>>) -> Json<bool> {
     let paused = paused_lock.lock().unwrap();
-    Json(*paused)
+    match *paused {
+        IsPaused::Paused => Json(true),
+        IsPaused::Running => Json(false),
+    }
+}
+
+enum CanStepNext {
+    StepNext,
+    StayPaused,
+}
+
+#[post("/step-next")]
+fn step_next(paused_lock: State<Arc<Mutex<IsPaused>>>, step_next_lock: State<Arc<Mutex<CanStepNext>>>) {
+    let paused = paused_lock.lock().unwrap();
+    match *paused {
+        IsPaused::Paused => {
+            let mut step_next = step_next_lock.lock().unwrap();
+            *step_next = CanStepNext::StepNext;
+        },
+        IsPaused::Running => {},
+    }
 }
 
 pub struct Runtime {}
@@ -92,8 +119,11 @@ impl Runtime {
         let breakpoints_lock = Arc::new(Mutex::new(HashSet::<u16>::new()));
         let rocket_breakpoints_lock = Arc::clone(&breakpoints_lock);
 
-        let paused_lock = Arc::new(Mutex::new(false));
+        let paused_lock = Arc::new(Mutex::<IsPaused>::new(IsPaused::Running));
         let rocket_paused_lock = Arc::clone(&paused_lock);
+
+        let can_step_next_lock = Arc::new(Mutex::<CanStepNext>::new(CanStepNext::StayPaused));
+        let rocket_can_step_next_lock = Arc::clone(&can_step_next_lock);
 
         thread::spawn(move || -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             let sdl_context = sdl2::init()?;
@@ -147,9 +177,19 @@ impl Runtime {
                 }
 
                 let mut paused = paused_lock.lock().unwrap();
+                let mut can_step_next = can_step_next_lock.lock().unwrap();
 
-                if *paused {
-                    continue;
+                match *paused {
+                    IsPaused::Paused => {
+
+                        match *can_step_next {
+                            CanStepNext::StayPaused => continue,
+                            CanStepNext::StepNext => *can_step_next = CanStepNext::StayPaused,
+                        }
+
+                    },
+
+                    IsPaused::Running => {}
                 }
 
                 let mut cpu = cpu_lock.lock().unwrap();
@@ -158,7 +198,7 @@ impl Runtime {
                 let breakpoints = breakpoints_lock.lock().unwrap();
 
                 if breakpoints.contains(&pc) {
-                    *paused = true;
+                    *paused = IsPaused::Paused;
                     continue;
                 }
 
@@ -186,7 +226,8 @@ impl Runtime {
         rocket::ignite().manage(rocket_cpu_lock)
                         .manage(rocket_paused_lock)
                         .manage(rocket_breakpoints_lock)
-                        .mount("/", routes![add_pc_breakpoint, delete_pc_breakpoint, registers, memory, pause_emulation, resume_emulation, is_paused])
+                        .manage(rocket_can_step_next_lock)
+                        .mount("/", routes![add_pc_breakpoint, delete_pc_breakpoint, registers, memory, pause_emulation, resume_emulation, is_paused, step_next])
                         .mount("/", StaticFiles::from(concat!(env!("CARGO_MANIFEST_DIR"), "/static")))
                         .launch();
         Ok(())

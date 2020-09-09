@@ -105,3 +105,11 @@ resume_button_element.onclick = () => {
     resume_request.open("POST", "http://localhost:8000/resume");
     resume_request.send();
 }
+
+let step_next_button_element = document.getElementById("step");
+step_next_button_element.onclick = () => {
+    let resume_request = new XMLHttpRequest();
+
+    resume_request.open("POST", "http://localhost:8000/step-next");
+    resume_request.send();
+}
