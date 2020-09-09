@@ -6,6 +6,15 @@ let pc_breakpoint_list_element = document.getElementById("pc_breakpoint_list");
 let new_pc_breakpoint_element = document.getElementById("pc_break");
 let add_pc_breakpoint_element = document.getElementById("add_pc_breakpoint");
 
+let peek_window_size_element = document.getElementById("peek_window_size");
+let peek_window_size = 64;
+
+peek_window_size_element.oninput = (e) => {
+    if (e.target.value > 0) {
+        peek_window_size = e.target.value;
+    }
+}
+
 let pc_breakpoints = [];
 
 add_pc_breakpoint_element.onclick = () => {
@@ -43,18 +52,44 @@ add_pc_breakpoint_element.onclick = () => {
     add_breakpoint_request.send();
 }
 
-function updateMemory(peek_address) {
-    let peek_window_size = 64;
-    let start_address = Math.max(0, peek_address - (peek_window_size / 2));
-    let end_address = Math.min(memory.length, peek_address + (peek_window_size / 2));
-    memory_element.textContent = JSON.stringify(memory.slice(start_address, end_address), (key, value) => {
-        if (typeof value === "number") {
-            return "0x" + value.toString(16);
-        }
+function formatMemoryWindow(start_address, memory_window) {
+    const ENTRIES_PER_LINE = 8;
+    const NUM_LINES = Math.floor(memory_window.length / ENTRIES_PER_LINE + 0.5);
 
-        return value;
-    });
-    memory_range_element.textContent = "Start: " + start_address.toString(16) + " End: " + end_address.toString(16);
+    let formatted_lines = [];
+    for (let i = 0; i < NUM_LINES; i++) {
+        let line = memory_window.slice(i * ENTRIES_PER_LINE, (i + 1) * ENTRIES_PER_LINE);
+        let line_address = start_address + i * ENTRIES_PER_LINE;
+        let formatted_string = "0x" + line_address.toString(16) + ": " + JSON.stringify(line, (key, value) => {
+            if (typeof value === "number") {
+                return "0x" + value.toString(16);
+            }
+
+            return value;
+        }) + "\n";
+
+        formatted_lines.push(formatted_string);
+    }
+
+    return formatted_lines;
+}
+
+function updateMemory(peek_address) {
+    let start_address = Math.max(0, peek_address - Math.floor(peek_window_size / 2));
+    let end_address = Math.min(memory.length, peek_address + Math.floor(peek_window_size / 2));
+
+    while(memory_element.firstChild) {
+        memory_element.removeChild(memory_element.lastChild);
+    }
+
+    let formatted_memory_lines = formatMemoryWindow(start_address, memory.slice(start_address, end_address + 1));
+    for (const line of formatted_memory_lines) {
+        let memory_line_element = document.createElement("p");
+        memory_line_element.textContent = line;
+
+        memory_element.appendChild(memory_line_element);
+    }
+    memory_range_element.textContent = "Start: 0x" + start_address.toString(16) + " End: " + end_address.toString(16);
 }
 
 peek_address_element.oninput = (e) => {

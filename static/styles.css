@@ -17,6 +17,9 @@
 }
 
 #memory {
+    display: flex;
+    overflow-wrap: anywhere;
+    flex-direction: column;
     border-width: 4;
     border: solid;
     margin: 10px;
