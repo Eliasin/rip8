@@ -130,6 +130,12 @@ fn next_instruction(cpu_lock: State<Arc<Mutex<CPU>>>) -> Json<Option<Instruction
     }
 }
 
+#[get("/instruction-trace")]
+fn instruction_trace(cpu_lock: State<Arc<Mutex<CPU>>>) -> Json<Option<Vec<(u16, Instruction)>>> {
+    let cpu = cpu_lock.lock().unwrap();
+    Json(cpu.get_instruction_trace())
+}
+
 pub struct Runtime {}
 
 pub const TIMER_HZ: f64 = 60.0;
@@ -158,7 +164,7 @@ impl Runtime {
     }
 
     pub fn start_debug(&mut self, program: Vec<u8>, cpu_clock_speed: f64) -> Result<(), Box<dyn::std::error::Error>> {
-        let cpu_lock = Arc::new(Mutex::new(CPU::new()));
+        let cpu_lock = Arc::new(Mutex::new(CPU::new(true)));
         let breakpoints_lock = Arc::new(Mutex::new(HashSet::<u16>::new()));
         let paused_lock = Arc::new(Mutex::new(IsPaused::Paused));
         let can_step_next_lock = Arc::new(Mutex::new(CanStepNext::StayPaused));
@@ -285,7 +291,7 @@ impl Runtime {
                                             memory, pause_emulation, resume_emulation, is_paused,
                                             step_next, last_drawn_sprite, last_draw_area,
                                             step_next_draw, last_draw_result, next_instruction,
-                                            last_instruction])
+                                            last_instruction, instruction_trace])
                         .mount("/", StaticFiles::from(concat!(env!("CARGO_MANIFEST_DIR"), "/static")))
                         .launch();
         Ok(())
@@ -305,7 +311,7 @@ impl Runtime {
         canvas.set_scale(20.0, 20.0)?;
         canvas.present();
 
-        let mut cpu = CPU::new();
+        let mut cpu = CPU::new(false);
         cpu.map_program(program)?;
         cpu.map_digit_sprites();
 

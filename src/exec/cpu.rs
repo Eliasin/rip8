@@ -37,14 +37,16 @@ pub struct CPU {
     register_file: RegisterFile,
     ram: RAM,
     last_instruction: Option<Instruction>,
+    instruction_trace: Option<Vec<(u16, Instruction)>>,
 }
 
 impl CPU {
-    pub fn new() -> CPU {
+    pub fn new(enable_instruction_tracing: bool) -> CPU {
         let mut cpu = CPU {
             register_file: RegisterFile::new(),
             ram: [0; RAM_SIZE],
             last_instruction: None,
+            instruction_trace: Some(vec![]),
         };
 
         cpu.register_file.PC = RAM_PROG_START as u16;
@@ -116,6 +118,13 @@ impl CPU {
 
         self.last_instruction = Some(instruction);
 
+        match &mut self.instruction_trace {
+            Some(trace) => {
+                trace.push((self.register_file.PC, instruction));
+            },
+            None => {},
+        };
+
         match instruction {
             Instruction::JP(_) | Instruction::JPV0(_) | Instruction::CALL(_) => {}
             _ => {
@@ -141,6 +150,10 @@ impl CPU {
 
     pub fn inspect_memory(&self) -> &RAM {
         &self.ram
+    }
+
+    pub fn get_instruction_trace(&self) -> Option<Vec<(u16, Instruction)>> {
+        self.instruction_trace.clone()
     }
 
     pub fn tick_timers(&mut self) {
