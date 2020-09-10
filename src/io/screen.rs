@@ -72,12 +72,9 @@ impl Screen {
             let wrapped_x = ((x as usize) + (i as usize)) % SCREEN_WIDTH;
             let sprite_pixel = (sprite_line & (0x80 >> i)) != 0;
             let final_value = self.screen[wrapped_y][wrapped_x] ^ sprite_pixel;
-            draw_area = draw_area | self.screen[wrapped_y][wrapped_x] as u8;
+            draw_area = draw_area | ((self.screen[wrapped_y][wrapped_x] as u8) << (7 - i));
             self.screen[wrapped_y][wrapped_x] = final_value;
-            draw_line = draw_line | final_value as u8;
-
-            draw_area = draw_area << 1;
-            draw_line = draw_line << 1;
+            draw_line = draw_line | ((final_value as u8) << (7 - i));
 
             is_pixel_overwritten = is_pixel_overwritten || (sprite_pixel && self.screen[wrapped_y][wrapped_x]);
         }
