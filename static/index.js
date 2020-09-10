@@ -121,8 +121,8 @@ function formatSprite(sprite) {
     return formattedSprite;
 }
 
-setInterval(() => {
-    let last_instruction_request = new XMLHttpRequest();
+function updateDisplays() {
+     let last_instruction_request = new XMLHttpRequest();
 
     last_instruction_request.onload = () => {
         last_instruction_element.textContent = JSON.stringify(JSON.parse(last_instruction_request.response), (key, value) => {
@@ -202,7 +202,9 @@ setInterval(() => {
 
     last_draw_result_request.open("GET", host + "/last-draw-result");
     last_draw_result_request.send();
-}, 1000);
+}
+
+setInterval(updateDisplays, 1000);
 
 let pause_button_element = document.getElementById("pause");
 pause_button_element.onclick = () => {
@@ -226,6 +228,8 @@ step_next_button_element.onclick = () => {
 
     step_next_request.open("POST", host + "/step-next");
     step_next_request.send();
+
+    updateDisplays();
 }
 
 let step_next_draw_button_element = document.getElementById("step_next_draw");
