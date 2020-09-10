@@ -77,7 +77,7 @@ fn get_val_from_byte_or_v_register(
 }
 
 fn get_pressed_key(keyboard: &dyn Keyboard) -> Option<Key> {
-    for key in 0x0..0xF {
+    for key in 0x0..(0xF + 1) {
         if keyboard.is_key_pressed(key) {
             return Some(key);
         }
