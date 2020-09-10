@@ -117,7 +117,7 @@ impl CPU {
         self.last_instruction = Some(instruction);
 
         match instruction {
-            Instruction::JP(_) | Instruction::JPV0(_) => {}
+            Instruction::JP(_) | Instruction::JPV0(_) | Instruction::CALL(_) => {}
             _ => {
                 self.register_file.PC += 2;
             }
