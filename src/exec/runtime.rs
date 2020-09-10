@@ -157,7 +157,7 @@ impl Runtime {
     pub fn start_debug(&mut self, program: Vec<u8>, cpu_clock_speed: f64) -> Result<(), Box<dyn::std::error::Error>> {
         let cpu_lock = Arc::new(Mutex::new(CPU::new()));
         let breakpoints_lock = Arc::new(Mutex::new(HashSet::<u16>::new()));
-        let paused_lock = Arc::new(Mutex::new(IsPaused::Running));
+        let paused_lock = Arc::new(Mutex::new(IsPaused::Paused));
         let can_step_next_lock = Arc::new(Mutex::new(CanStepNext::StayPaused));
         let screen_lock = Arc::new(Mutex::new(Screen::new()));
 
