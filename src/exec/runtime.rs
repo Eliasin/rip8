@@ -134,14 +134,17 @@ pub struct Runtime {}
 
 pub const TIMER_HZ: f64 = 60.0;
 
+pub const ON_COLOR: sdl2::pixels::Color = sdl2::pixels::Color::RGBA(186, 109, 0, 255);
+pub const OFF_COLOR: sdl2::pixels::Color = sdl2::pixels::Color::RGBA(255, 164, 36, 255);
+
 fn draw_to_canvas(canvas: &mut sdl2::render::WindowCanvas, screen: &Screen) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     for (row, row_arr) in screen.inspect_screen().iter().enumerate() {
         for (column, pixel) in row_arr.iter().enumerate() {
             if *pixel {
-                canvas.set_draw_color(sdl2::pixels::Color::BLACK);
+                canvas.set_draw_color(ON_COLOR);
                 canvas.draw_point(sdl2::rect::Point::new(column as i32, row as i32))?;
             } else {
-                canvas.set_draw_color(sdl2::pixels::Color::WHITE);
+                canvas.set_draw_color(OFF_COLOR);
                 canvas.draw_point(sdl2::rect::Point::new(column as i32, row as i32))?;
             }
         }
@@ -177,7 +180,7 @@ impl Runtime {
                 let window = video_subsystem.window("rip8", 1280, 640).build()?;
                 let mut canvas = window.into_canvas().build()?;
 
-                canvas.set_draw_color(sdl2::pixels::Color::WHITE);
+                canvas.set_draw_color(OFF_COLOR);
                 canvas.clear();
                 canvas.set_scale(20.0, 20.0)?;
                 canvas.present();
