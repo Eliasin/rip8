@@ -68,7 +68,7 @@ impl Screen {
         let mut draw_line = 0;
         let mut draw_area = 0;
 
-        for i in 0..7 {
+        for i in 0..8 {
             let wrapped_x = ((x as usize) + (i as usize)) % SCREEN_WIDTH;
             let sprite_pixel = (sprite_line & (0x80 >> i)) != 0;
             let final_value = self.screen[wrapped_y][wrapped_x] ^ sprite_pixel;
