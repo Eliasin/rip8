@@ -8,7 +8,7 @@ pub enum Register {
     Other(OtherRegister),
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize)]
 pub enum VRegister {
     V0,
     V1,

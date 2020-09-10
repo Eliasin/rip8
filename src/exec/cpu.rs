@@ -36,6 +36,7 @@ impl RAMOutOfBoundsError {
 pub struct CPU {
     register_file: RegisterFile,
     ram: RAM,
+    last_instruction: Option<Instruction>,
 }
 
 impl CPU {
@@ -43,6 +44,7 @@ impl CPU {
         let mut cpu = CPU {
             register_file: RegisterFile::new(),
             ram: [0; RAM_SIZE],
+            last_instruction: None,
         };
 
         cpu.register_file.PC = RAM_PROG_START as u16;
@@ -112,6 +114,8 @@ impl CPU {
             screen,
         )?;
 
+        self.last_instruction = Some(instruction);
+
         match instruction {
             Instruction::JP(_) | Instruction::JPV0(_) => {}
             _ => {
@@ -120,6 +124,10 @@ impl CPU {
         };
 
         Ok(())
+    }
+
+    pub fn inspect_last_instruction(&self) -> Option<Instruction> {
+        self.last_instruction
     }
 
     pub fn inspect_register_file(&self) -> RegisterFile {

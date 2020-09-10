@@ -1,18 +1,19 @@
 #![allow(non_camel_case_types)]
 
 use crate::mem::register::VRegister;
+use serde::Serialize;
 
 pub type Addr = u16;
 pub type Nibble = u8;
 pub type Byte = u8;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize)]
 pub enum ByteOrVReg {
     Byte(Byte),
     Register(VRegister),
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize)]
 pub enum Instruction {
     CLS,
     RET,

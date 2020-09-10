@@ -115,6 +115,21 @@ fn step_next_draw(step_next_draw_lock: State<Arc<Mutex<CanStepNext>>>) {
     *step_next_draw = CanStepNext::StepNextDraw;
 }
 
+#[get("/last-instruction")]
+fn last_instruction(cpu_lock: State<Arc<Mutex<CPU>>>) -> Json<Option<Instruction>> {
+    let cpu = cpu_lock.lock().unwrap();
+    Json(cpu.inspect_last_instruction())
+}
+
+#[get("/next-instruction")]
+fn next_instruction(cpu_lock: State<Arc<Mutex<CPU>>>) -> Json<Option<Instruction>> {
+    let cpu = cpu_lock.lock().unwrap();
+    match cpu.inspect_next_instruction() {
+        Ok(v) => Json(Some(v)),
+        Err(_) => Json(None),
+    }
+}
+
 pub struct Runtime {}
 
 pub const TIMER_HZ: f64 = 60.0;
@@ -266,7 +281,8 @@ impl Runtime {
                         .mount("/", routes![add_pc_breakpoint, delete_pc_breakpoint, registers,
                                             memory, pause_emulation, resume_emulation, is_paused,
                                             step_next, last_drawn_sprite, last_draw_area,
-                                            step_next_draw, last_draw_result])
+                                            step_next_draw, last_draw_result, next_instruction,
+                                            last_instruction])
                         .mount("/", StaticFiles::from(concat!(env!("CARGO_MANIFEST_DIR"), "/static")))
                         .launch();
         Ok(())

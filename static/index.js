@@ -6,6 +6,9 @@ let pc_breakpoint_list_element = document.getElementById("pc_breakpoint_list");
 let new_pc_breakpoint_element = document.getElementById("pc_break");
 let add_pc_breakpoint_element = document.getElementById("add_pc_breakpoint");
 
+let last_instruction_element = document.getElementById("last_instruction");
+let next_instruction_element = document.getElementById("next_instruction");
+
 let peek_window_size_element = document.getElementById("peek_window_size");
 let peek_window_size = 64;
 
@@ -119,6 +122,36 @@ function formatSprite(sprite) {
 }
 
 setInterval(() => {
+    let last_instruction_request = new XMLHttpRequest();
+
+    last_instruction_request.onload = () => {
+        last_instruction_element.textContent = JSON.stringify(JSON.parse(last_instruction_request.response), (key, value) => {
+            if (typeof value === "number") {
+                return "0x" + value.toString(16);
+            }
+
+            return value;
+        });
+    };
+
+    last_instruction_request.open("GET", host + "/last-instruction");
+    last_instruction_request.send();
+
+    let next_instruction_request = new XMLHttpRequest();
+
+    next_instruction_request.onload = () => {
+        next_instruction_element.textContent = JSON.stringify(JSON.parse(next_instruction_request.response), (key, value) => {
+            if (typeof value === "number") {
+                return "0x" + value.toString(16);
+            }
+
+            return value;
+        });
+    };
+
+    next_instruction_request.open("GET", host + "/next-instruction");
+    next_instruction_request.send();
+
     let register_file_request = new XMLHttpRequest();
 
     register_file_request.onload = () => {
